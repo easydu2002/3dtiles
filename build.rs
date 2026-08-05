@@ -326,6 +326,15 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     println!("cargo:rustc-link-lib=sqlite3");
     println!("cargo:rustc-link-lib=xml2");
 
+    // OSG is static on Linux and introduces OpenGL/X11 symbols after the
+    // first system-library occurrence.
+    println!("cargo:rustc-link-lib=GL");
+    println!("cargo:rustc-link-lib=X11");
+    println!("cargo:rustc-link-lib=Xi");
+    println!("cargo:rustc-link-lib=Xrandr");
+    println!("cargo:rustc-link-lib=dl");
+    println!("cargo:rustc-link-lib=pthread");
+
     // GNU ld resolves static archives from left to right. Libraries such as
     // basisu introduce C++ runtime symbols after the first stdc++ occurrence,
     // so repeat the system runtimes after all static C++ dependencies.
