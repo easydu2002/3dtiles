@@ -310,6 +310,12 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     // GeographicLib for geoid height calculation
     println!("cargo:rustc-link-lib=GeographicLib");
 
+    // GNU ld resolves static archives from left to right. Libraries such as
+    // basisu introduce C++ runtime symbols after the first stdc++ occurrence,
+    // so repeat the system runtimes after all static C++ dependencies.
+    println!("cargo:rustc-link-lib=stdc++");
+    println!("cargo:rustc-link-lib=z");
+
     let vcpkg_share_dir = vcpkg_installed_dir.join("share");
     copy_gdal_data(vcpkg_share_dir.to_str().unwrap());
     copy_proj_data(vcpkg_share_dir.to_str().unwrap());
