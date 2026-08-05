@@ -214,7 +214,6 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     let source_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     // Link Search Path for Draco library
     println!("cargo:rustc-link-search=native={}/thirdparty/draco", Path::new(&source_dir).display());
-    println!("cargo:rustc-link-lib=static=draco");
 
     let out_dir = env::var("OUT_DIR").unwrap();
     println!("cargo:warning=out_dir = {}", &out_dir);
@@ -239,6 +238,9 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     // 1. FFI static
     println!("cargo:rustc-link-lib=static=_3dtile");
     println!("cargo:rustc-link-lib=static=ufbx");
+    // _3dtile calls Draco directly, so its provider must follow the consumer
+    // when GNU ld scans static archives from left to right.
+    println!("cargo:rustc-link-lib=static=draco");
 
     // 2. OSG
     // println!("cargo:rustc-link-lib=osgdb_jp2");
