@@ -214,6 +214,10 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     let source_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     // Link Search Path for Draco library
     println!("cargo:rustc-link-search=native={}/thirdparty/draco", Path::new(&source_dir).display());
+    // Most vcpkg dependencies are static archives on Linux and several of
+    // them have circular/transitive references. Ask GNU ld to rescan the
+    // complete native-library group instead of relying on a fragile order.
+    println!("cargo:rustc-link-arg=-Wl,--start-group");
     println!("cargo:rustc-link-lib=static=draco");
 
     let out_dir = env::var("OUT_DIR").unwrap();
@@ -309,6 +313,7 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
 
     // GeographicLib for geoid height calculation
     println!("cargo:rustc-link-lib=GeographicLib");
+    println!("cargo:rustc-link-arg=-Wl,--end-group");
 
     // GNU ld resolves static archives from left to right. Libraries such as
     // basisu introduce C++ runtime symbols after the first stdc++ occurrence,
