@@ -297,6 +297,8 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     println!("cargo:rustc-link-lib=png");
     println!("cargo:rustc-link-lib=tiff");
     println!("cargo:rustc-link-lib=webp");
+    // Static libwebp references SharpYUV; keep the provider after webp for GNU ld.
+    println!("cargo:rustc-link-lib=sharpyuv");
     println!("cargo:rustc-link-lib=xml2");
     println!("cargo:rustc-link-lib=lzma");
     println!("cargo:rustc-link-lib=openjp2");
