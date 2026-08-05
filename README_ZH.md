@@ -15,6 +15,7 @@
 | 平台 | 架构 | 状态 | 说明 |
 |----------|------|--------|-------|
 | **Linux** | x64 | [![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/linux.yml/badge.svg)](https://github.com/fanvanzh/3dtiles/actions/workflows/linux.yml) | Ubuntu 24.04 LTS |
+| **Linux** | ARM64 | [![Build](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml/badge.svg)](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml) | Ubuntu 24.04 ARM64 |
 | **Windows** | x64 | [![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/windows.yml/badge.svg)](https://github.com/fanvanzh/3dtiles/actions/workflows/windows.yml) | Windows 最新版 |
 | **macOS** | ARM64 (M1+) | [![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-arm64.yml/badge.svg)](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-arm64.yml) | macOS 15 (Sequoia) |
 | **macOS** | Intel | [![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-intel.yml/badge.svg)](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-intel.yml) | macOS 14+ |
@@ -190,7 +191,17 @@ $env:VCPKG_TRIPLET="x64-windows"
 
 # 使用完整的镜像仓库路径构建
 ./build-dockerfile.sh myregistry/3dtiles:v1.0
+
+# 构建 Linux ARM64 镜像
+./build-dockerfile.sh 3dtiles:arm64 linux/arm64
+
+# 只导出供 Java ProcessBuilder 调用的 ARM64 程序包
+docker buildx build --platform linux/arm64 --target bundle \
+  --output type=local,dest=dist/linux-arm64 .
 ```
+
+ARM64 程序包不是单个文件：`_3dtile` 运行时还需要同目录下的 `gdal`、
+`proj` 和 `osgPlugins-3.6.5`。Java 应调用 `_3dtile`，并保持这些目录不变。
 
 ## 开发
 
@@ -501,6 +512,10 @@ _3dtile.exe -f shape -i E:\Data\aa.shp -o E:\Data\aa \
 - 数据目录必须有一个 `"Data"` 目录的总入口；
 - `"Data"` 目录同级放置一个 `metadata.xml` 文件用来记录模型的位置信息；
 - 每个瓦片目录下，必须有个和目录名同名的 osgb 文件，否则无法识别根节点；
+
+也兼容省略 `Data` 外层目录的导出结构：输入目录中可直接同时包含
+`metadata.xml` 和各瓦片目录。转换失败时进程返回非零退出码，便于 Java
+`ProcessBuilder` 判断任务结果。
 
 正确的目录结构示意：
 

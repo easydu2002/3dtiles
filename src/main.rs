@@ -294,7 +294,7 @@ fn main() {
     let in_path = std::path::Path::new(input);
     if !in_path.exists() {
         error!("{} does not exists.", input);
-        return;
+        std::process::exit(2);
     }
     // Canonicalize path to ensure absolute paths for C++ loader
     let abs_input_buf = in_path.canonicalize().unwrap_or(in_path.to_path_buf());
@@ -303,7 +303,17 @@ fn main() {
     match format {
         "osgb" => {
             // osgb默认开启material_unlit
-            convert_osgb(input, output, tile_config, enable_simplify, enable_texture_compress, enable_draco, true);
+            if !convert_osgb(
+                input,
+                output,
+                tile_config,
+                enable_simplify,
+                enable_texture_compress,
+                enable_draco,
+                true,
+            ) {
+                std::process::exit(1);
+            }
         }
         "shape" => {
             convert_shapefile(
@@ -490,7 +500,7 @@ struct ModelMetadata {
     pub SRSOrigin: String,
 }
 
-fn convert_osgb(src: &str, dest: &str, config: &str, enable_simplify: bool, enable_texture_compress: bool, enable_draco: bool, enable_unlit: bool) {
+fn convert_osgb(src: &str, dest: &str, config: &str, enable_simplify: bool, enable_texture_compress: bool, enable_draco: bool, enable_unlit: bool) -> bool {
     use serde_json::Value;
     use std::fs::File;
     use std::io::prelude::*;
@@ -740,12 +750,13 @@ fn convert_osgb(src: &str, dest: &str, config: &str, enable_simplify: bool, enab
     {
         error!("{}", e);
         unsafe { fun_c::cleanup_global_resources(); }
-        return;
+        return false;
     }
     let elap_sec = tick.elapsed().unwrap();
     let tick_num = elap_sec.as_secs() as f64 + elap_sec.subsec_nanos() as f64 * 1e-9;
     info!("task over, cost {:.2} s.", tick_num);
     unsafe { fun_c::cleanup_global_resources(); }
+    true
 }
 
 fn convert_shapefile(

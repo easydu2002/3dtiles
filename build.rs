@@ -171,7 +171,7 @@ fn get_target_dir() -> std::path::PathBuf {
     target_dir
 }
 
-fn build_linux_unknown() {
+fn build_linux_unknown(vcpkg_triplet: &str) {
     let vcpkg_root = std::env::var("VCPKG_ROOT").expect("VCPKG_ROOT environment variable is not set");
 
     let vcpkg_has_been_installed = env::var("VCPKG_HAS_BEEN_INSTALLED").unwrap_or_default() == "1";
@@ -186,11 +186,19 @@ fn build_linux_unknown() {
     let mut config = Config::new(".");
     config
         .define("CMAKE_TOOLCHAIN_FILE",format!("{}/scripts/buildsystems/vcpkg.cmake", vcpkg_root))
+        .define("VCPKG_TARGET_TRIPLET", vcpkg_triplet)
         .define("CMAKE_C_COMPILER", "/usr/bin/gcc")
         .define("CMAKE_CXX_COMPILER", "/usr/bin/g++")
         .define("CMAKE_MAKE_PROGRAM", "/usr/bin/make")
         .define("CMAKE_EXPORT_COMPILE_COMMANDS", "ON")
         .very_verbose(true);
+
+    // vcpkg marks basisu as unsupported outside x86/x64 even though upstream
+    // contains ARM/NEON code paths. Match the existing macOS ARM64 build and
+    // allow the port to attempt compilation on Linux ARM64.
+    if vcpkg_triplet == "arm64-linux" {
+        config.define("VCPKG_INSTALL_OPTIONS", "--allow-unsupported");
+    }
 
     if enable_strict {
         println!("cargo:warning=Building with STRICT CHECKS enabled (CI mode)");
@@ -216,7 +224,8 @@ fn build_linux_unknown() {
     let vcpkg_installed_dir = Path::new(&out_dir)
         .join("build")
         .join("vcpkg_installed")
-        .join("x64-linux");
+        .join(vcpkg_triplet);
+    println!("cargo:warning=Linux vcpkg triplet = {}", vcpkg_triplet);
     // Link Search Path for third party library
     let vcpkg_installed_lib_dir = vcpkg_installed_dir.join("lib");
     println!("cargo:rustc-link-search=native={}", vcpkg_installed_lib_dir.display());
@@ -720,7 +729,8 @@ fn main() {
     std::env::set_var("RUST_BACKTRACE", "full");
     match env::var("TARGET") {
         Ok(val) => match val.as_str() {
-            "x86_64-unknown-linux-gnu" => build_linux_unknown(),
+            "x86_64-unknown-linux-gnu" => build_linux_unknown("x64-linux"),
+            "aarch64-unknown-linux-gnu" => build_linux_unknown("arm64-linux"),
             "x86_64-pc-windows-msvc" => build_win_msvc(),
             "aarch64-apple-darwin" => build_macos(),
             "x86_64-apple-darwin" => build_macos_x86_64(),

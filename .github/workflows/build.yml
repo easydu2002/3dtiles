@@ -10,7 +10,7 @@ on:
       platform:
         required: true
         type: string
-        description: 'Platform name for artifact naming (linux-x86_64, macos-arm64, windows-x86_64)'
+        description: 'Platform name for artifact naming (linux-x86_64, linux-arm64, macos-arm64, windows-x86_64)'
       package:
         required: false
         type: boolean
@@ -35,7 +35,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Install dependencies (Linux)
-        if: inputs.os == 'ubuntu-24.04'
+        if: startsWith(inputs.os, 'ubuntu-')
         run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxrandr-dev libxi-dev libxxf86vm-dev autoconf autoconf-archive automake libtool
 
       - name: Install dependencies (macOS)
@@ -47,8 +47,8 @@ jobs:
         id: cache-vcpkg
         with:
           path: ${{ github.workspace }}/vcpkg_installed/
-          key: ${{ runner.os }}${{ inputs.os == 'macos-15' && '-arm' || inputs.os == 'macos-15-intel' && '-x64' || '' }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
-          restore-keys: ${{ runner.os }}${{ inputs.os == 'macos-15' && '-arm' || inputs.os == 'macos-15-intel' && '-x64' || '' }}-vcpkg-
+          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: ${{ inputs.platform }}-vcpkg-
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
@@ -56,7 +56,7 @@ jobs:
           doNotCache: true
           vcpkgGitCommitId: '84bab45d415d22042bd0b9081aea57f362da3f35'
           runVcpkgInstall: ${{ steps.cache-vcpkg-installed.outputs.cache-hit != 'true' || inputs.package }}
-          runVcpkgFormatString: ${{ inputs.os == 'macos-15' && '[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--allow-unsupported`]' || '' }}
+          runVcpkgFormatString: ${{ (inputs.os == 'macos-15' || inputs.platform == 'linux-arm64') && '[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--allow-unsupported`]' || '' }}
         env:
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
           VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed

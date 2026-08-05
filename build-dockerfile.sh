@@ -12,23 +12,23 @@ NC='\033[0m' # No Color
 # Help function
 show_help() {
     echo -e "${BLUE}🔧 3D Tiles Docker Build Script${NC}"
-    echo -e "${BLUE}📖 Usage: $0 [image-tag]${NC}"
+    echo -e "${BLUE}📖 Usage: $0 [image-tag] [platform]${NC}"
     echo ""
     echo -e "${YELLOW}🎯 Examples:${NC}"
-    echo "  $0                       # Build with default tag: 3dtiles:latest"
-    echo "  $0 3dtiles:dev           # Build with custom tag: 3dtiles:dev"
-    echo "  $0 my-registry/3dtiles:v1.0   # Build with full registry path"
+    echo "  $0                                  # Build 3dtiles:latest for linux/amd64"
+    echo "  $0 3dtiles:arm64 linux/arm64        # Build an ARM64 image"
+    echo "  $0 my-registry/3dtiles:v1 linux/arm64"
     echo ""
     echo -e "${YELLOW}📦 Output Docker image:${NC}"
     echo "  - Customizable with the image-tag argument"
     echo "  - Default: 3dtiles:latest"
     echo ""
     echo -e "${YELLOW}📋 Docker Build Configuration:${NC}"
-    echo "  - Platform: linux/amd64"
+    echo "  - Platform: linux/amd64 or linux/arm64"
     echo "  - Base Builder: rust:1.90.0-bookworm"
     echo "  - Base Runtime: debian:bookworm-slim"
     echo "  - Build Type: Multi-stage build with vcpkg integration"
-    echo "  - Mirror: USTC mirror for faster package installation"
+    echo "  - Dependencies: pinned vcpkg baseline from vcpkg.json"
 }
 
 # Validate Docker is installed
@@ -46,13 +46,16 @@ fi
 # Function to build Docker image
 build_image() {
     local image_tag=$1
+    local platform=$2
 
     echo -e "${BLUE}🚀 Building 3D Tiles Docker image...${NC}"
     echo -e "${YELLOW}Image tag: ${image_tag}${NC}"
+    echo -e "${YELLOW}Platform: ${platform}${NC}"
 
-    docker build \
+    docker buildx build \
         -t "${image_tag}" \
-        --platform linux/amd64 \
+        --platform "${platform}" \
+        --load \
         . || {
         echo -e "${RED}❌ Docker build failed!${NC}"
         exit 1
@@ -63,9 +66,11 @@ build_image() {
 
 # Main script logic
 if [ $# == 0 ]; then
-    build_image "3dtiles:latest"
+    build_image "3dtiles:latest" "linux/amd64"
 elif [ $# == 1 ]; then
-    build_image "$1"
+    build_image "$1" "linux/amd64"
+elif [ $# == 2 ]; then
+    build_image "$1" "$2"
 else
     echo -e "${RED}❌ Too many arguments!${NC}"
     show_help

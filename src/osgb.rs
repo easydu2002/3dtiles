@@ -85,10 +85,20 @@ pub fn osgb_batch_convert(
     use std::io::prelude::*;
     use std::sync::mpsc::channel;
 
-    let path = dir.join("Data");
-    if !path.exists() || !path.is_dir() {
-        return Err(From::from(format!("dir {} not exist", path.display())));
-    }
+    // Smart3D normally stores tile directories under <dataset>/Data. Some
+    // exporters put metadata.xml and the tile directories in the same folder.
+    // Accept both layouts to avoid copying a potentially very large dataset.
+    let standard_data_path = dir.join("Data");
+    let path = if standard_data_path.is_dir() {
+        standard_data_path
+    } else {
+        info!(
+            "{} is missing; treating {} as the Smart3D Data directory",
+            standard_data_path.display(),
+            dir.display()
+        );
+        dir.to_path_buf()
+    };
 
     let (sender, receiver) = channel();
     let mut osgb_dir_pair: Vec<OsgbInfo> = vec![];
@@ -116,6 +126,13 @@ pub fn osgb_batch_convert(
                 error!("dir error: {}", osgb.display());
             }
         }
+    }
+
+    if task_count == 0 {
+        return Err(From::from(format!(
+            "no Smart3D tile directories found in {}; expected <tile>/<tile>.osgb",
+            path.display()
+        )));
     }
 
     let rad_x = unsafe { degree2rad(center_x) };

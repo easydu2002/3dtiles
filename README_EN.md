@@ -19,6 +19,7 @@
 | Platform | Arch | Status | Notes |
 |----------|------|--------|-------|
 | **Linux** | x64 | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/linux.yml/badge.svg) | Ubuntu 24.04 LTS |
+| **Linux** | ARM64 | [![Build](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml/badge.svg)](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml) | Ubuntu 24.04 ARM64 |
 | **Windows** | x64 | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/windows.yml/badge.svg) | Windows Latest |
 | **macOS** | ARM64 (M1+) | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-arm64.yml/badge.svg) | macOS 15 (Sequoia) |
 | **macOS** | Intel | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-intel.yml/badge.svg) | macOS 14+ |
@@ -196,7 +197,17 @@ Or use PowerShell:
 
 # Build with registry path
 ./build-dockerfile.sh myregistry/3dtiles:v1.0
+
+# Build a Linux ARM64 image
+./build-dockerfile.sh 3dtiles:arm64 linux/arm64
+
+# Export only the Linux ARM64 bundle for Java ProcessBuilder
+docker buildx build --platform linux/arm64 --target bundle \
+  --output type=local,dest=dist/linux-arm64 .
 ```
+
+The ARM64 bundle is not a single file. Keep `_3dtile`, `gdal`, `proj`, and
+`osgPlugins-3.6.5` together when deploying it with the Java application.
 
 # Usage
 
