@@ -313,6 +313,12 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     // Static dependency consumers above appear after their providers in the
     // original list. Repeat the providers after spatialite/freexl so GNU ld
     // can resolve the symbols introduced by those archives.
+    println!("cargo:rustc-link-lib=kmlconvenience");
+    println!("cargo:rustc-link-lib=kmlengine");
+    println!("cargo:rustc-link-lib=kmldom");
+    println!("cargo:rustc-link-lib=kmlbase");
+    println!("cargo:rustc-link-lib=uriparser");
+    println!("cargo:rustc-link-lib=expat");
     println!("cargo:rustc-link-lib=minizip");
     println!("cargo:rustc-link-lib=geos_c");
     println!("cargo:rustc-link-lib=geos");
