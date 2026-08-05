@@ -58,6 +58,18 @@ jobs:
           key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-
 
+      - name: Prepare vcpkg cache directories (Unix)
+        if: inputs.os != 'windows-latest'
+        shell: bash
+        run: mkdir -p "$VCPKG_DOWNLOADS" "${{ github.workspace }}/vcpkg-archives"
+
+      - name: Prepare vcpkg cache directories (Windows)
+        if: inputs.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DOWNLOADS
+          New-Item -ItemType Directory -Force -Path '${{ github.workspace }}/vcpkg-archives'
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
