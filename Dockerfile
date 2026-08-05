@@ -41,8 +41,8 @@ COPY . .
 ENV CARGO_TERM_COLOR=always
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
-    --mount=type=cache,target=/root/.cache/vcpkg/archives \
-    --mount=type=cache,target=/opt/vcpkg/downloads \
+    --mount=type=cache,id=vcpkg-archives-$TARGETARCH,target=/root/.cache/vcpkg/archives \
+    --mount=type=cache,id=vcpkg-downloads-$TARGETARCH,target=/opt/vcpkg/downloads \
     cargo build --release -vv
 
 # File-only target for the bundle consumed by Java ProcessBuilder:

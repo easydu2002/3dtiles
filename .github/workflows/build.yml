@@ -31,7 +31,8 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: ${{ inputs.platform == 'linux-arm64' && 'arm64-linux' || inputs.platform == 'linux-x86_64' && 'x64-linux' || inputs.platform == 'macos-arm64' && 'arm64-osx' || inputs.platform == 'macos-x86_64' && 'x64-osx' || 'x64-windows' }}
       VCPKG_DEFAULT_HOST_TRIPLET: ${{ inputs.platform == 'linux-arm64' && 'arm64-linux' || inputs.platform == 'linux-x86_64' && 'x64-linux' || inputs.platform == 'macos-arm64' && 'arm64-osx' || inputs.platform == 'macos-x86_64' && 'x64-osx' || 'x64-windows' }}
       VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/vcpkg-downloads
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg-archives,readwrite"
     outputs:
       artifact-name: ${{ steps.package.outputs.artifact-name }}
     steps:
@@ -48,12 +49,14 @@ jobs:
         run: brew install autoconf autoconf-archive automake libtool
 
       - name: Cache vcpkg
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         id: cache-vcpkg
         with:
-          path: ${{ github.workspace }}/vcpkg_installed/
-          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
-          restore-keys: ${{ inputs.platform }}-vcpkg-
+          path: |
+            ${{ env.VCPKG_DOWNLOADS }}
+            ${{ github.workspace }}/vcpkg-archives
+          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
@@ -151,3 +154,12 @@ jobs:
         with:
           name: ${{ inputs.platform }}
           path: _3dtile-${{ inputs.platform }}${{ inputs.os == 'windows-latest' && '.zip' || '.tar.gz' }}
+
+      - name: Save vcpkg cache
+        if: always() && steps.cache-vcpkg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ env.VCPKG_DOWNLOADS }}
+            ${{ github.workspace }}/vcpkg-archives
+          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
