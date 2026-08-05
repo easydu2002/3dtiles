@@ -13,7 +13,7 @@ RUN sed -i 's|http://deb.debian.org|https://mirrors.ustc.edu.cn|g' /etc/apt/sour
 # Install vcpkg dependencies
 RUN apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
     git build-essential cmake make zip unzip tar curl \
-    pkg-config autoconf automake libtool linux-libc-dev libgl1-mesa-dev \
+    pkg-config autoconf autoconf-archive automake libtool linux-libc-dev libgl1-mesa-dev \
  && rm -rf /var/lib/apt/lists/*
 
 # Install vcpkg at the same baseline used by the manifest

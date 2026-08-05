@@ -72,8 +72,20 @@ jobs:
           fi
           for attempt in 1 2 3; do
             echo "vcpkg install attempt ${attempt}/3"
-            if "$VCPKG_ROOT/vcpkg" "${args[@]}"; then
+            log_file="vcpkg-attempt-${attempt}.log"
+            set +e
+            "$VCPKG_ROOT/vcpkg" "${args[@]}" 2>&1 | tee "$log_file"
+            status=${PIPESTATUS[0]}
+            set -e
+            if [[ "$status" -eq 0 ]]; then
               exit 0
+            fi
+            diagnostic="$(grep -B 8 -A 3 -E 'Download failed|error:' "$log_file" | tail -n 40 || true)"
+            if [[ -n "$diagnostic" ]]; then
+              diagnostic="${diagnostic//'%'/'%25'}"
+              diagnostic="${diagnostic//$'\r'/'%0D'}"
+              diagnostic="${diagnostic//$'\n'/'%0A'}"
+              echo "::error title=vcpkg attempt ${attempt} failed::${diagnostic}"
             fi
             if [[ "$attempt" -lt 3 ]]; then
               sleep $((attempt * 15))
