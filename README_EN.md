@@ -19,7 +19,7 @@
 | Platform | Arch | Status | Notes |
 |----------|------|--------|-------|
 | **Linux** | x64 | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/linux.yml/badge.svg) | Ubuntu 24.04 LTS |
-| **Linux** | ARM64 | [![Build](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml/badge.svg)](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml) | Ubuntu 24.04 ARM64 |
+| **Linux** | ARM64 | [![Build](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml/badge.svg)](https://github.com/easydu2002/3dtiles/actions/workflows/linux-arm64.yml) | Ubuntu 22.04 ARM64 |
 | **Windows** | x64 | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/windows.yml/badge.svg) | Windows Latest |
 | **macOS** | ARM64 (M1+) | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-arm64.yml/badge.svg) | macOS 15 (Sequoia) |
 | **macOS** | Intel | ![Build](https://github.com/fanvanzh/3dtiles/actions/workflows/macOS-intel.yml/badge.svg) | macOS 14+ |
