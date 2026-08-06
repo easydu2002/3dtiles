@@ -52,6 +52,10 @@ USE_OSGPLUGIN(tga)
 USE_OSGPLUGIN(jpeg)
 USE_OSGPLUGIN(png)
 USE_SERIALIZER_WRAPPER_LIBRARY(osg)
+// Compressed Smart3D OSGB files name the OSG "zlib" compressor in their
+// binary stream. Static linking otherwise drops Compressors.cpp because its
+// registration object has no directly referenced symbols.
+USE_COMPRESSOR_WRAPPER(zlib)
 #endif
 
 struct DracoState {

@@ -189,6 +189,13 @@ pub fn osgb_batch_convert(
             }
         }
     }
+    if tile_array.len() != task_count {
+        return Err(From::from(format!(
+            "OSGB conversion failed for {} of {} tile directories",
+            task_count - tile_array.len(),
+            task_count
+        )));
+    }
     let mut root_box = vec![-1.0E+38f64, -1.0E+38, -1.0E+38, 1.0E+38, 1.0E+38, 1.0E+38];
     let mut root_geometric_error = 0.0;
     for x in tile_array.iter() {
