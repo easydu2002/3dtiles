@@ -208,6 +208,10 @@ docker buildx build --platform linux/arm64 --target bundle \
 
 The ARM64 bundle is not a single file. Keep `_3dtile`, `gdal`, `proj`, and
 `osgPlugins-3.6.5` together when deploying it with the Java application.
+The GitHub Actions bundle targets Ubuntu 22.04 and requires glibc 2.35 or
+newer plus `libgl1` and `libstdc++6`. It does not run in an Alpine/musl Java
+image; use a Debian/Ubuntu-based Java image (or the runtime stage in this
+Dockerfile) when invoking it through `ProcessBuilder`.
 
 # Usage
 

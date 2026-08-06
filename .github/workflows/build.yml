@@ -6,7 +6,7 @@ on:
       os:
         required: true
         type: string
-        description: 'Operating system to build for (ubuntu-24.04, macos-15, windows-latest)'
+        description: 'Operating system to build for (Ubuntu, macOS, or Windows runner label)'
       platform:
         required: true
         type: string
@@ -55,8 +55,8 @@ jobs:
           path: |
             ${{ env.VCPKG_DOWNLOADS }}
             ${{ github.workspace }}/vcpkg-archives
-          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-
+          key: ${{ inputs.os }}-${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ inputs.os }}-${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-
 
       - name: Prepare vcpkg cache directories (Unix)
         if: inputs.os != 'windows-latest'
@@ -197,4 +197,4 @@ jobs:
           path: |
             ${{ env.VCPKG_DOWNLOADS }}
             ${{ github.workspace }}/vcpkg-archives
-          key: ${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ inputs.os }}-${{ inputs.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}

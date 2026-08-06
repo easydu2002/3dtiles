@@ -202,6 +202,9 @@ docker buildx build --platform linux/arm64 --target bundle \
 
 ARM64 程序包不是单个文件：`_3dtile` 运行时还需要同目录下的 `gdal`、
 `proj` 和 `osgPlugins-3.6.5`。Java 应调用 `_3dtile`，并保持这些目录不变。
+GitHub Actions 产物以 Ubuntu 22.04 为最低运行基线，需要 glibc 2.35 及以上，
+并安装 `libgl1`、`libstdc++6`。该程序不能直接放进 Alpine/musl Java 镜像；
+Java 后端应使用 Debian/Ubuntu 基础镜像，或直接使用本项目 Dockerfile 的 runtime 阶段。
 
 ## 开发
 
