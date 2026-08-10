@@ -48,9 +48,11 @@ jobs:
           dnf install -y \
             autoconf autoconf-archive automake bison cmake curl file flex \
             gcc gcc-c++ git gzip libtool make ninja-build patch perl \
-            pkgconf-pkg-config python3 tar unzip which zip \
+            pkgconf-pkg-config python39 tar unzip which zip \
             mesa-libGL-devel mesa-libGLU-devel \
             libX11-devel libXi-devel libXrandr-devel libXxf86vm-devel
+          ln -sf /usr/bin/python3.9 /usr/local/bin/python3
+          python3 --version
           echo "System libc: $(getconf GNU_LIBC_VERSION)"
           test "$(getconf GNU_LIBC_VERSION)" = "glibc 2.28"
 
