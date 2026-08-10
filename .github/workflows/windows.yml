@@ -1,6 +1,7 @@
 name: Windows
 
 on:
+  workflow_dispatch:
   push:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -15,4 +16,4 @@ jobs:
     with:
       os: windows-latest
       platform: windows-x86_64
-      package: false
+      package: true
