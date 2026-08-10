@@ -39,6 +39,9 @@ jobs:
       VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
       VCPKG_DOWNLOADS: ${{ github.workspace }}/vcpkg-downloads
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-archives,readwrite
+      CC: /opt/rh/gcc-toolset-12/root/usr/bin/gcc
+      CXX: /opt/rh/gcc-toolset-12/root/usr/bin/g++
+      LD_LIBRARY_PATH: /opt/rh/gcc-toolset-12/root/usr/lib64
 
     steps:
       - name: Install build tools
@@ -47,12 +50,14 @@ jobs:
           dnf config-manager --set-enabled powertools
           dnf install -y \
             autoconf autoconf-archive automake bison cmake curl file flex \
-            gcc gcc-c++ git gzip libtool make ninja-build patch perl \
+            gcc gcc-c++ gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ \
+            git gzip libtool make ninja-build patch perl \
             pkgconf-pkg-config python39 tar unzip which zip \
             mesa-libGL-devel mesa-libGLU-devel \
             libX11-devel libXi-devel libXrandr-devel libXxf86vm-devel
           ln -sf /usr/bin/python3.9 /usr/local/bin/python3
           python3 --version
+          "$CC" --version
           echo "System libc: $(getconf GNU_LIBC_VERSION)"
           test "$(getconf GNU_LIBC_VERSION)" = "glibc 2.28"
 
