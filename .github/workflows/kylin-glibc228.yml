@@ -1,0 +1,175 @@
+name: Kylin V10 glibc 2.28
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/kylin-glibc228.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'build.rs'
+      - 'src/**'
+      - 'vcpkg.json'
+      - 'vcpkg-configuration.json'
+      - 'vcpkg-overlays/**'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-22.04
+            triplet: x64-linux
+          - platform: linux-arm64
+            runner: ubuntu-22.04-arm
+            triplet: arm64-linux
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: rockylinux:8
+    env:
+      VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
+      VCPKG_DEFAULT_HOST_TRIPLET: ${{ matrix.triplet }}
+      VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/vcpkg-downloads
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-archives,readwrite
+
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y dnf-plugins-core epel-release
+          dnf config-manager --set-enabled powertools
+          dnf install -y \
+            autoconf autoconf-archive automake bison cmake curl file flex \
+            gcc gcc-c++ git gzip libtool make ninja-build patch perl \
+            pkgconf-pkg-config python3 tar unzip which zip \
+            mesa-libGL-devel mesa-libGLU-devel \
+            libX11-devel libXi-devel libXrandr-devel libXxf86vm-devel
+          echo "System libc: $(getconf GNU_LIBC_VERSION)"
+          test "$(getconf GNU_LIBC_VERSION)" = "glibc 2.28"
+
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Prepare cache directories
+        run: mkdir -p "$VCPKG_DOWNLOADS" "${{ github.workspace }}/vcpkg-archives"
+
+      - name: Restore vcpkg cache
+        uses: actions/cache/restore@v5
+        id: cache-vcpkg
+        with:
+          path: |
+            ${{ env.VCPKG_DOWNLOADS }}
+            ${{ github.workspace }}/vcpkg-archives
+          key: kylin-v10-${{ matrix.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: kylin-v10-${{ matrix.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: true
+          vcpkgGitCommitId: '84bab45d415d22042bd0b9081aea57f362da3f35'
+          runVcpkgInstall: false
+
+      - name: Install vcpkg dependencies
+        run: |
+          args=(
+            install --recurse --clean-after-build
+            --x-install-root "$VCPKG_INSTALLED_DIR"
+            --triplet "$VCPKG_DEFAULT_TRIPLET"
+          )
+          if [ "$VCPKG_DEFAULT_TRIPLET" = "arm64-linux" ]; then
+            args+=(--allow-unsupported)
+          fi
+          "$VCPKG_ROOT/vcpkg" "${args[@]}"
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build release binary
+        run: cargo build -vv --release
+        env:
+          VCPKG_HAS_BEEN_INSTALLED: 1
+
+      - name: Package portable runtime
+        run: |
+          set -euo pipefail
+          mkdir -p release/lib
+          cp target/release/_3dtile release/
+          cp -r target/release/gdal release/
+          cp -r target/release/proj release/
+          cp -r target/release/osgPlugins-3.6.5 release/
+
+          ldd target/release/_3dtile \
+            | awk '/=> \// {print $3} /^\// {print $1}' \
+            | sort -u \
+            | while read -r library; do
+                name="$(basename "$library")"
+                case "$name" in
+                  libc.so.*|libm.so.*|libdl.so.*|libpthread.so.*|librt.so.*|libresolv.so.*|ld-linux*.so.*)
+                    continue
+                    ;;
+                esac
+                cp -Lv "$library" release/lib/
+              done
+
+          cat > release/run-3dtile.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -e
+          runtime_dir="$(cd "$(dirname "$0")" && pwd)"
+          export GDAL_DATA="$runtime_dir/gdal"
+          export PROJ_DATA="$runtime_dir/proj"
+          export LD_LIBRARY_PATH="$runtime_dir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          exec "$runtime_dir/_3dtile" "$@"
+          EOF
+          chmod 755 release/_3dtile release/run-3dtile.sh
+
+          cat > release/README.txt <<EOF
+          3dtiles portable runtime - ${{ matrix.platform }}
+
+          Compatible with Kylin V10 SP1 and other glibc 2.28+ distributions.
+
+          Run:
+            ./run-3dtile.sh -f osgb -i /path/to/input -o /path/to/output
+          EOF
+
+          required_versions="$({
+            strings release/_3dtile
+            find release/lib -maxdepth 1 -type f -exec strings {} +
+          } | grep -oE 'GLIBC_[0-9]+(\.[0-9]+)*' | sort -Vu)"
+          echo "$required_versions"
+          incompatible="$(echo "$required_versions" \
+            | sed 's/^GLIBC_//' \
+            | awk -F. '$1 > 2 || ($1 == 2 && $2 > 28)')"
+          if [ -n "$incompatible" ]; then
+            echo "Found symbols newer than GLIBC_2.28: $incompatible" >&2
+            exit 1
+          fi
+
+          LD_LIBRARY_PATH="$PWD/release/lib" ldd release/_3dtile
+          ./release/run-3dtile.sh --help >/dev/null
+          tar -czf "3dtiles-v0.1.1-${{ matrix.platform }}.tar.gz" -C release .
+
+      - name: Upload portable runtime
+        uses: actions/upload-artifact@v6
+        with:
+          name: kylin-v10-${{ matrix.platform }}
+          path: 3dtiles-v0.1.1-${{ matrix.platform }}.tar.gz
+
+      - name: Save vcpkg cache
+        if: always() && steps.cache-vcpkg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ${{ env.VCPKG_DOWNLOADS }}
+            ${{ github.workspace }}/vcpkg-archives
+          key: kylin-v10-${{ matrix.platform }}-vcpkg-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-overlays/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
