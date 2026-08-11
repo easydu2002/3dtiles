@@ -41,6 +41,8 @@ jobs:
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-archives,readwrite
       CC: /opt/rh/gcc-toolset-12/root/usr/bin/gcc
       CXX: /opt/rh/gcc-toolset-12/root/usr/bin/g++
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: /opt/rh/gcc-toolset-12/root/usr/bin/gcc
+      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: /opt/rh/gcc-toolset-12/root/usr/bin/gcc
       LD_LIBRARY_PATH: /opt/rh/gcc-toolset-12/root/usr/lib64
 
     steps:
