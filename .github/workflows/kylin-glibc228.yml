@@ -56,7 +56,15 @@ jobs:
             mesa-libGL-devel mesa-libGLU-devel \
             libX11-devel libXi-devel libXrandr-devel libXxf86vm-devel
           ln -sf /usr/bin/python3.9 /usr/local/bin/python3
+          curl -fsSL https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.gz -o /tmp/autoconf.tar.gz
+          tar -xzf /tmp/autoconf.tar.gz -C /tmp
+          pushd /tmp/autoconf-2.72
+          ./configure --prefix=/usr/local
+          make -j2
+          make install
+          popd
           python3 --version
+          autoconf --version | head -n 1
           "$CC" --version
           echo "System libc: $(getconf GNU_LIBC_VERSION)"
           test "$(getconf GNU_LIBC_VERSION)" = "glibc 2.28"
