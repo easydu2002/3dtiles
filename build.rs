@@ -173,6 +173,8 @@ fn get_target_dir() -> std::path::PathBuf {
 
 fn build_linux_unknown(vcpkg_triplet: &str) {
     let vcpkg_root = std::env::var("VCPKG_ROOT").expect("VCPKG_ROOT environment variable is not set");
+    let cc = env::var("CC").unwrap_or_else(|_| "/usr/bin/gcc".to_string());
+    let cxx = env::var("CXX").unwrap_or_else(|_| "/usr/bin/g++".to_string());
 
     let vcpkg_has_been_installed = env::var("VCPKG_HAS_BEEN_INSTALLED").unwrap_or_default() == "1";
     if vcpkg_has_been_installed {
@@ -187,8 +189,8 @@ fn build_linux_unknown(vcpkg_triplet: &str) {
     config
         .define("CMAKE_TOOLCHAIN_FILE",format!("{}/scripts/buildsystems/vcpkg.cmake", vcpkg_root))
         .define("VCPKG_TARGET_TRIPLET", vcpkg_triplet)
-        .define("CMAKE_C_COMPILER", "/usr/bin/gcc")
-        .define("CMAKE_CXX_COMPILER", "/usr/bin/g++")
+        .define("CMAKE_C_COMPILER", cc)
+        .define("CMAKE_CXX_COMPILER", cxx)
         .define("CMAKE_MAKE_PROGRAM", "/usr/bin/make")
         .define("CMAKE_EXPORT_COMPILE_COMMANDS", "ON")
         .very_verbose(true);
